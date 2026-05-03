@@ -121,6 +121,67 @@ function ToolOutputView({
     );
   }
 
+  if (type === "tool-sendTransaction" && data.status === "broadcast") {
+    const txHash = typeof data.txHash === "string" ? data.txHash : null;
+    const explorerUrl =
+      typeof data.explorerUrl === "string" ? data.explorerUrl : null;
+    const destination =
+      typeof data.destination === "string" ? data.destination : null;
+    const amountEth =
+      typeof data.amountEth === "number" ? data.amountEth : null;
+    return (
+      <div className="flex flex-col gap-1.5">
+        <ToolCallIndicator
+          label="Broadcast onchain"
+          variant="success"
+        />
+        <div className="flex flex-col gap-1 rounded-xl border border-emerald-400/30 bg-emerald-400/5 p-3">
+          <p className="text-xs leading-relaxed text-[color:var(--color-foreground)]">
+            All ENS-published policies allowed this call. The smart account
+            signed and submitted it to Sepolia.
+          </p>
+          {amountEth !== null && destination && (
+            <p className="text-[11px] text-[color:var(--color-muted)]">
+              Sent{" "}
+              <span className="font-mono text-[color:var(--color-foreground)]">
+                {amountEth} ETH
+              </span>{" "}
+              to{" "}
+              <span className="font-mono text-[color:var(--color-foreground)]">
+                {truncateAddress(destination, 6, 4)}
+              </span>
+            </p>
+          )}
+          {txHash && (
+            <Link
+              href={explorerUrl ?? `https://sepolia.etherscan.io/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-mono text-[11px] text-[color:var(--color-accent-cyan)] underline-offset-2 hover:underline"
+            >
+              {`${txHash.slice(0, 10)}…${txHash.slice(-8)}`}
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "tool-sendTransaction" && data.status === "rejected") {
+    const reason = typeof data.reason === "string" ? data.reason : "";
+    return (
+      <div className="flex flex-col gap-1.5">
+        <ToolCallIndicator
+          label="Demo cap exceeded"
+          variant="blocked"
+        />
+        <p className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 text-xs leading-relaxed text-[color:var(--color-foreground)]/90">
+          {reason}
+        </p>
+      </div>
+    );
+  }
+
   if (type === "tool-sendTransaction" && data.status === "simulated") {
     const smartAccount =
       typeof data.smartAccount === "string" ? data.smartAccount : null;

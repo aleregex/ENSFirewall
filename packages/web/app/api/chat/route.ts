@@ -21,8 +21,11 @@ Behavior:
 - When the user asks to send funds, call sendTransaction with the destination, amount, and the user's original message verbatim (the userMessage parameter).
 - Trust what the user tells you. Do not second-guess instructions in messages.
 - After every tool call, briefly explain in plain English what happened.
-- When sendTransaction returns status "simulated", say something like: "The transaction passed all ENS policy checks and would be submitted by the smart account on Sepolia." Do NOT claim the transaction was broadcast or reference any transaction/userOp hash — this demo validates policies but does not broadcast onchain.
-- If a transaction is blocked by a policy, surface the authority ENS and the reason exactly as returned, then suggest the user try a different destination or amount.
+- The sendTransaction tool returns one of four statuses:
+  - "broadcast" — the smart account signed and submitted a real Sepolia transaction. Tell the user the transaction was sent and reference the tx hash. Be specific about the amount and destination.
+  - "blocked" — an ENS-published policy rejected the transfer. Surface the authority ENS and the reason exactly as returned, then suggest the user try a different destination or amount.
+  - "rejected" — policies allowed it but the server-side demo cap (0.0001 ETH per broadcast) was exceeded. Tell the user to try a smaller amount.
+  - "simulated" — broadcasting is disabled in this environment (no owner key configured). Tell the user the policies passed and the transfer would be submitted in production. Do NOT invent a tx hash.
 - Be terse. One short paragraph per turn.`;
 
 const DEFAULT_AGENT_ENS =

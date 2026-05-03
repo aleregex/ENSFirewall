@@ -84,14 +84,6 @@ Five distinct jobs, all doing real work:
 
 Remove ENS and the protocol collapses.
 
-## The network effect
-
-When an attack succeeds on one agent, the owner can publish the malicious address to a community ENS list. Every subscribed agent worldwide is protected on the next ENS read — no redeploy, no patch, no coordination.
-
-![Network effect](./docs/network_effect.png)
-
-This is what a decentralized firewall enables that centralized blocklist APIs can't: permissionless contribution, instant propagation, and immutable provenance — all using only ENS text records as the medium.
-
 ## Architecture
 
 - **Smart contract:** `ENSFirewallAccount.sol` extends eth-infinitism's `SimpleAccount`. Custom `execute()` reads ENS text records before forwarding any call.

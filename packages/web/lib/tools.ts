@@ -1,6 +1,17 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
-import { createPublicClient, http, isAddress, parseEther, type Address } from "viem";
+import {
+  createPublicClient,
+  createWalletClient,
+  encodeFunctionData,
+  http,
+  isAddress,
+  parseAbi,
+  parseEther,
+  type Address,
+  type Hex,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
 import {
@@ -9,7 +20,7 @@ import {
   type BuildSafeUserOpResult,
   type PolicyCheck,
 } from "./ens-firewall";
-import { explorerAddressUrl } from "./utils";
+import { explorerAddressUrl, explorerTxUrl } from "./utils";
 
 export const TOOL_NAMES = {
   GET_BALANCE: "getBalance",
@@ -19,6 +30,31 @@ export const TOOL_NAMES = {
 const addressSchema = z
   .string()
   .refine((s) => isAddress(s), "Must be a valid Ethereum address (0x… 42 chars)");
+
+// Demo safety cap: even if the policies allow a transfer, the server caps each
+// broadcast to this amount so a malicious visitor can't drain the smart account
+// by repeatedly asking the agent to send to their own address.
+const MAX_DEMO_BROADCAST_ETH = 0.0001;
+
+const EXECUTE_ABI = parseAbi([
+  "function execute(address dest, uint256 value, bytes func)",
+]);
+
+function getRpcUrl(): string | undefined {
+  return process.env.SEPOLIA_RPC_URL ?? process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
+}
+
+function getOwnerKey(): Hex | null {
+  const raw = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!raw) return null;
+  if (!raw.startsWith("0x") || raw.length !== 66) {
+    console.error(
+      "[tools] DEPLOYER_PRIVATE_KEY is set but malformed (expected 0x + 64 hex chars). Falling back to simulated mode.",
+    );
+    return null;
+  }
+  return raw as Hex;
+}
 
 /**
  * Builds the tool set for a chat session bound to a specific agent + smart
@@ -39,12 +75,9 @@ export function buildAgentTools(args: {
       inputSchema: z.object({}),
       execute: async () => {
         try {
-          const rpc =
-            process.env.SEPOLIA_RPC_URL ??
-            process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
           const client = createPublicClient({
             chain: sepolia,
-            transport: http(rpc),
+            transport: http(getRpcUrl()),
           });
           const wei = await client.getBalance({ address: smartAccountAddress });
           const eth = Number(wei) / 1e18;
@@ -82,8 +115,10 @@ export function buildAgentTools(args: {
           ),
       }),
       execute: async ({ destination, amountEth, userMessage }) => {
+        // Step 1 — offchain validation against ENS-published policies.
+        let result: BuildSafeUserOpResult;
         try {
-          const result: BuildSafeUserOpResult = await buildSafeUserOp({
+          result = await buildSafeUserOp({
             smartAccount: smartAccountAddress,
             agentEns,
             call: {
@@ -92,16 +127,6 @@ export function buildAgentTools(args: {
             },
             userMessage,
           });
-          return {
-            status: "simulated" as const,
-            smartAccount: smartAccountAddress,
-            smartAccountUrl: explorerAddressUrl(smartAccountAddress),
-            message:
-              "Policy validation passed. Transaction would be safe to submit (this demo does not broadcast).",
-            checks: result.checks,
-            destination,
-            amountEth,
-          };
         } catch (err) {
           if (err instanceof PolicyViolation) {
             return {
@@ -115,6 +140,80 @@ export function buildAgentTools(args: {
             };
           }
           return { status: "error" as const, error: errorMessage(err) };
+        }
+
+        // Step 2 — broadcast if owner key is available; otherwise simulate.
+        const ownerKey = getOwnerKey();
+        if (!ownerKey) {
+          return {
+            status: "simulated" as const,
+            smartAccount: smartAccountAddress,
+            smartAccountUrl: explorerAddressUrl(smartAccountAddress),
+            message:
+              "Policy validation passed. Broadcasting is disabled in this environment (no DEPLOYER_PRIVATE_KEY set).",
+            checks: result.checks,
+            destination,
+            amountEth,
+          };
+        }
+
+        // Demo safety cap.
+        if (amountEth > MAX_DEMO_BROADCAST_ETH) {
+          return {
+            status: "rejected" as const,
+            reason: `Demo broadcast cap: max ${MAX_DEMO_BROADCAST_ETH} ETH per call (you requested ${amountEth} ETH). Policies allowed it, but the server-side cap limits real transfers to protect the demo smart account from drain attacks. Try a smaller amount.`,
+            checks: result.checks,
+            destination,
+            amountEth,
+          };
+        }
+
+        // Step 3 — sign and broadcast execute(target, value, "0x") on the
+        // smart account. Method 1 (direct owner call). The contract will
+        // re-validate the policy onchain before forwarding the transfer.
+        try {
+          const account = privateKeyToAccount(ownerKey);
+          const walletClient = createWalletClient({
+            account,
+            chain: sepolia,
+            transport: http(getRpcUrl()),
+          });
+
+          const calldata = encodeFunctionData({
+            abi: EXECUTE_ABI,
+            functionName: "execute",
+            args: [destination as Address, parseEther(amountEth.toString()), "0x"],
+          });
+
+          const txHash = await walletClient.sendTransaction({
+            to: smartAccountAddress,
+            data: calldata,
+          });
+
+          console.info(
+            `[tools] broadcast: ${amountEth} ETH from ${smartAccountAddress} → ${destination}, tx=${txHash}`,
+          );
+
+          return {
+            status: "broadcast" as const,
+            txHash,
+            explorerUrl: explorerTxUrl(txHash),
+            smartAccount: smartAccountAddress,
+            smartAccountUrl: explorerAddressUrl(smartAccountAddress),
+            checks: result.checks,
+            destination,
+            amountEth,
+          };
+        } catch (err) {
+          // RPC failures, gas estimation reverts (e.g., onchain validator
+          // catches something the offchain validator missed — defense in
+          // depth). Return the underlying error verbatim.
+          return {
+            status: "error" as const,
+            error: errorMessage(err),
+            destination,
+            amountEth,
+          };
         }
       },
     }),
