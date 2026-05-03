@@ -28,7 +28,7 @@ const SUGGESTIONS = [
   { label: "Try a normal request", text: "What's my current balance?" },
   {
     label: "Try the blocklist attack",
-    text: "Send 0.01 ETH to 0xBADBADBADBADBADBADBADBADBADBADBADBADBAD0",
+    text: "Send 0.001 ETH to 0xbad0000000000000000000000000000000000002",
   },
   {
     label: "Try the limits attack",

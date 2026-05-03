@@ -28,7 +28,7 @@ const DEFAULT_AGENT_ENS =
   process.env.NEXT_PUBLIC_AGENT_ENS ?? "demo-agent.ensfirewall.eth";
 const DEFAULT_SMART_ACCOUNT =
   (process.env.NEXT_PUBLIC_AGENT_SMART_ACCOUNT_ADDRESS as Address | undefined) ??
-  ("0x000000000000000000000000000000000000dEaD" as Address);
+  ("0x6EB916196e1A081234B26a977DFacF32510fA6C7" as Address);
 
 export async function POST(req: Request) {
   const body = (await req.json()) as {

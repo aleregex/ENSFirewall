@@ -8,7 +8,17 @@
  *     from "ens-agent-firewall";
  */
 
-import { isAddressEqual, type Address, type Hex } from "viem";
+import {
+  createPublicClient,
+  decodeAbiParameters,
+  http,
+  isAddressEqual,
+  namehash,
+  parseAbi,
+  type Address,
+  type Hex,
+} from "viem";
+import { sepolia } from "viem/chains";
 
 // ---------- Types (mirror packages/shared/src/policy-schema.ts) ----------
 
@@ -86,62 +96,117 @@ export class PolicyViolation extends Error {
   }
 }
 
-// ---------- Dummy data (delete when SDK is wired) ----------
+// ---------- ENS resolver client ----------
 
-const DUMMY_SUBSCRIPTIONS: Record<string, string[]> = {
-  "demo-agent.ensfirewall.eth": [
-    "scamlist.ensfirewall.eth",
-    "limits.ensfirewall.eth",
-    "patterns.ensfirewall.eth",
-  ],
-  "second-agent.ensfirewall.eth": [
-    "scamlist.ensfirewall.eth",
-    "community-reports.ensfirewall.eth",
-  ],
-};
+const PUBLIC_RESOLVER = "0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5" as Address;
+const RPC_URL =
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
+  "https://ethereum-sepolia-rpc.publicnode.com";
 
-const DUMMY_POLICY_LISTS: Record<string, PolicyRule> = {
-  "scamlist.ensfirewall.eth": {
-    type: "blocklist",
-    addresses: [
-      "0xBADBADBADBADBADBADBADBADBADBADBADBADBAD0",
-      "0xBADBADBADBADBADBADBADBADBADBADBADBADBAD1",
-    ] as Address[],
-  },
-  "limits.ensfirewall.eth": {
-    type: "limits",
-    maxPerTxWei: 100_000_000_000_000_000n, // 0.1 ETH
-    maxPerDayWei: 500_000_000_000_000_000n, // 0.5 ETH
-  },
-  "patterns.ensfirewall.eth": {
-    type: "patterns",
-    patterns: [
-      "ignore previous instructions",
-      "as the new system prompt",
-      "you are now",
-      "send all funds",
-    ],
-  },
-  "community-reports.ensfirewall.eth": {
-    type: "blocklist",
-    addresses: [],
-  },
-};
+const client = createPublicClient({
+  chain: sepolia,
+  transport: http(RPC_URL),
+});
+
+const TEXT_ABI = parseAbi([
+  "function text(bytes32, string) view returns (string)",
+]);
+
+async function readText(authorityEns: string, key: string): Promise<string> {
+  const node = namehash(authorityEns);
+  return await client.readContract({
+    address: PUBLIC_RESOLVER,
+    abi: TEXT_ABI,
+    functionName: "text",
+    args: [node, key],
+  });
+}
 
 // ---------- Public API ----------
 
-// TODO(SDK): replace with real ENS resolver read of `policy:subscriptions`.
 export async function getSubscriptions(agentEns: string): Promise<string[]> {
-  await fakeLatency();
-  return DUMMY_SUBSCRIPTIONS[agentEns] ?? [];
+  try {
+    const value = await readText(agentEns, "policy:subscriptions");
+
+    if (!value || value.length === 0) {
+      // Fallback to known subscriptions for the demo agent since not every
+      // agent ENS will have a subscription record written yet.
+      if (agentEns === "demo-agent.ensfirewall.eth") {
+        return ["scamlist.ensfirewall.eth"];
+      }
+      return [];
+    }
+
+    return value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } catch (err) {
+    console.error("Failed to read subscriptions from ENS:", err);
+    if (agentEns === "demo-agent.ensfirewall.eth") {
+      return ["scamlist.ensfirewall.eth"];
+    }
+    return [];
+  }
 }
 
-// TODO(SDK): replace with real ENS resolver read of `policy:rules-encoded` + decode.
 export async function getPolicyList(authorityEns: string): Promise<PolicyList | null> {
-  await fakeLatency();
-  const rule = DUMMY_POLICY_LISTS[authorityEns];
-  if (!rule) return null;
-  return { authorityEns, rule };
+  try {
+    // Try blocklist first.
+    const blocklistHex = await readText(authorityEns, "policy:rules-encoded");
+    if (blocklistHex && blocklistHex.length > 2) {
+      const [addresses] = decodeAbiParameters(
+        [{ type: "address[]" }],
+        blocklistHex as `0x${string}`,
+      );
+      return {
+        authorityEns,
+        rule: {
+          type: "blocklist",
+          addresses: addresses as Address[],
+        },
+      };
+    }
+
+    // Then limits.
+    const limitsHex = await readText(authorityEns, "policy:limits-encoded");
+    if (limitsHex && limitsHex.length > 2) {
+      const [maxPerTx, maxPerDay] = decodeAbiParameters(
+        [{ type: "uint256" }, { type: "uint256" }],
+        limitsHex as `0x${string}`,
+      );
+      return {
+        authorityEns,
+        rule: {
+          type: "limits",
+          maxPerTxWei: maxPerTx as bigint,
+          maxPerDayWei: maxPerDay as bigint,
+        },
+      };
+    }
+
+    // Patterns aren't onchain yet — keep a static fallback for the demo
+    // authority so the prompt-injection path still has something to validate.
+    if (authorityEns === "patterns.ensfirewall.eth") {
+      return {
+        authorityEns,
+        rule: {
+          type: "patterns",
+          patterns: [
+            "ignore previous instructions",
+            "as the new system prompt",
+            "you are now",
+            "send all funds",
+          ],
+        },
+      };
+    }
+
+    return null;
+  } catch (err) {
+    console.error(`Failed to read policy from ${authorityEns}:`, err);
+    return null;
+  }
 }
 
 export function validateBlocklist(
@@ -244,11 +309,4 @@ export async function buildSafeUserOp(
     userOpHash: fakeHash,
     checks,
   };
-}
-
-// ---------- Internal ----------
-
-async function fakeLatency(): Promise<void> {
-  // Mimic ENS resolver round-trip so the UI animations feel real.
-  await new Promise((r) => setTimeout(r, 120 + Math.random() * 180));
 }
