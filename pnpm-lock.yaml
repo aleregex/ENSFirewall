@@ -38,6 +38,10 @@ importers:
         version: 5.9.3
 
   packages/shared:
+    dependencies:
+      viem:
+        specifier: ^2.21.0
+        version: 2.48.8(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.4.2)
     devDependencies:
       tsup:
         specifier: ^8.3.5

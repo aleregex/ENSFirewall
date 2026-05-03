@@ -39,9 +39,12 @@ export function buildAgentTools(args: {
       inputSchema: z.object({}),
       execute: async () => {
         try {
+          const rpc =
+            process.env.SEPOLIA_RPC_URL ??
+            process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
           const client = createPublicClient({
             chain: sepolia,
-            transport: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
+            transport: http(rpc),
           });
           const wei = await client.getBalance({ address: smartAccountAddress });
           const eth = Number(wei) / 1e18;
