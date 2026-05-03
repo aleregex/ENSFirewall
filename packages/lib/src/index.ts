@@ -4,6 +4,7 @@ export * from "./ens/addresses.js";
 export * from "./chain/clients.js";
 export * from "./chain/tx.js";
 export * from "./chain/config.js";
+export * from "./policies/index.js";
 export * from "./validators/index.js";
 export {
   ENS_KEYS,
