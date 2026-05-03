@@ -1,0 +1,34 @@
+{
+  "name": "@ensfirewall/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "clean": "rm -rf .next node_modules .turbo"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "3.0.74",
+    "@ai-sdk/react": "3.0.176",
+    "@rainbow-me/rainbowkit": "2.2.10",
+    "@tanstack/react-query": "5.100.8",
+    "ai": "6.0.174",
+    "lucide-react": "1.14.0",
+    "next": "16.2.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "viem": "2.48.8",
+    "wagmi": "2.19.5",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.2.4",
+    "@types/node": "^20.17.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "4.2.4",
+    "typescript": "^5.7.2"
+  }
+}
