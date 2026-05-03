@@ -84,6 +84,14 @@ Five distinct jobs, all doing real work:
 
 Remove ENS and the protocol collapses.
 
+## The network effect
+
+When an attack succeeds on one agent, the owner can publish the malicious address to a community ENS list. Every subscribed agent worldwide is protected on the next ENS read — no redeploy, no patch, no coordination.
+
+![Network effect](./docs/network_effect.png)
+
+This is what a decentralized firewall enables that centralized blocklist APIs can't: permissionless contribution, instant propagation, and immutable provenance — all using only ENS text records as the medium.
+
 ## Architecture
 
 - **Smart contract:** `ENSFirewallAccount.sol` extends eth-infinitism's `SimpleAccount`. Custom `execute()` reads ENS text records before forwarding any call.
@@ -92,11 +100,14 @@ Remove ENS and the protocol collapses.
 - **Network:** Sepolia testnet only.
 - **No backend, no database** — all state lives in ENS or in contract storage.
 
-See the system-flow diagram at the top of this README for the full request lifecycle from user prompt to onchain settlement.
+The system-flow diagram at the top of this README shows the topology. The sequence diagram below shows the temporal lifecycle of a single transaction — including the two validation moments (offchain in the SDK, onchain in the smart account) that implement defense in depth.
 
+![Transaction sequence](./docs/sequence.png)
 ## Repo structure
 
-pnpm + turbo monorepo:
+pnpm + turbo monorepo organized in four layers:
+
+![Architecture](./docs/architecture.png)
 
 - `packages/contracts/` — Solidity (Foundry). Smart account + validator. **13 tests passing**, plus full E2E run on live Sepolia.
 - `packages/lib/` — TypeScript SDK foundation: ENS read/write helpers, viem chain clients, policy validators, ABI encoding/decoding (port from `growi-ens` disclosed below).
