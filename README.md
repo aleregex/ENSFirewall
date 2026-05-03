@@ -134,5 +134,5 @@ The ENS read/write helpers in `packages/lib/src/ens/*` and the viem chain client
 
 ## Team
 
-- **aleregex** 
-- **OscarGauss** 
+- **@aleregex** 
+- **@OscarGauss** 
