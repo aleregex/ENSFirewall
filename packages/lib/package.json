@@ -1,0 +1,23 @@
+{
+  "name": "ens-agent-firewall",
+  "version": "0.1.0",
+  "description": "Decentralized firewall for AI agents. Security policies live in ENS.",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "viem": "^2.21.0",
+    "@ensfirewall/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "tsup": "^8.3.5",
+    "@types/node": "^22.10.0"
+  }
+}
