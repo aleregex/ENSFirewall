@@ -17,3 +17,7 @@ packages/contracts/broadcast/
 Thumbs.db
 
 .idea
+
+tmp
+
+docs/internal
