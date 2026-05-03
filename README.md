@@ -72,8 +72,7 @@ pnpm + turbo monorepo:
 
 ## Demo
 
-- **Live page:** [link to your Vercel deploy here]
-- **Video walkthrough (3 min):** [YouTube link here]
+- **Live page:** https://ens-firewall-web.vercel.app/
 
 ## Run the contracts locally
 
