@@ -16,7 +16,13 @@ contract ENSFirewallAccount is SimpleAccount {
     bytes32 public authorityNode;
     address public publicResolver;
 
+    /// @notice Start timestamp of the current 24h spend window
+    uint256 public dayStart;
+    /// @notice Wei spent in the current 24h window (across all execute/executeBatch calls)
+    uint256 public spentToday;
+
     string private constant POLICY_KEY = "policy:rules-encoded";
+    string private constant LIMITS_KEY = "policy:limits-encoded";
 
     event AuthoritySet(bytes32 indexed node);
     event PolicyResolverSet(address indexed resolver);
@@ -47,22 +53,45 @@ contract ENSFirewallAccount is SimpleAccount {
         emit PolicyResolverSet(newResolver);
     }
 
-    function _validateAgainstPolicy(address target) internal view {
-        string memory hexEncoded = IPublicResolver(publicResolver).text(authorityNode, POLICY_KEY);
-        if (bytes(hexEncoded).length == 0) {
-            return;
+    function _resetDailyCounterIfNeeded() internal {
+        if (block.timestamp >= dayStart + 1 days) {
+            dayStart = block.timestamp;
+            spentToday = 0;
         }
-        bytes memory encoded = _hexStringToBytes(hexEncoded);
-        PolicyValidator.validateBlocklist(encoded, target);
+    }
+
+    function _recordSpend(uint256 value) internal {
+        spentToday += value;
+    }
+
+    /// @notice Validate `target`/`value` against the authority's blocklist and limits
+    /// @dev Not view: resets the daily counter when the window has rolled over.
+    function _validateAgainstPolicy(address target, uint256 value) internal {
+        IPublicResolver resolver = IPublicResolver(publicResolver);
+
+        _resetDailyCounterIfNeeded();
+
+        string memory blocklistHex = resolver.text(authorityNode, POLICY_KEY);
+        if (bytes(blocklistHex).length > 0) {
+            bytes memory encoded = _hexStringToBytes(blocklistHex);
+            PolicyValidator.validateBlocklist(encoded, target);
+        }
+
+        string memory limitsHex = resolver.text(authorityNode, LIMITS_KEY);
+        if (bytes(limitsHex).length > 0) {
+            bytes memory encoded = _hexStringToBytes(limitsHex);
+            PolicyValidator.validateLimits(encoded, value, spentToday);
+        }
     }
 
     function execute(address target, uint256 value, bytes calldata data) external override {
         _requireForExecute();
-        _validateAgainstPolicy(target);
+        _validateAgainstPolicy(target, value);
         bool ok = Exec.call(target, value, data, gasleft());
         if (!ok) {
             Exec.revertWithReturnData();
         }
+        _recordSpend(value);
     }
 
     function executeBatch(Call[] calldata calls) external override {
@@ -70,7 +99,7 @@ contract ENSFirewallAccount is SimpleAccount {
         uint256 callsLength = calls.length;
         for (uint256 i = 0; i < callsLength; i++) {
             Call calldata c = calls[i];
-            _validateAgainstPolicy(c.target);
+            _validateAgainstPolicy(c.target, c.value);
             bool ok = Exec.call(c.target, c.value, c.data, gasleft());
             if (!ok) {
                 if (callsLength == 1) {
@@ -79,6 +108,7 @@ contract ENSFirewallAccount is SimpleAccount {
                     revert ExecuteError(i, Exec.getReturnData(0));
                 }
             }
+            _recordSpend(c.value);
         }
     }
 

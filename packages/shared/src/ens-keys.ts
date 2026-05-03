@@ -1,6 +1,7 @@
 export const ENS_KEYS = {
   POLICY_RULES_JSON: "policy:rules",
   POLICY_RULES_ENCODED: "policy:rules-encoded",
+  POLICY_LIMITS_ENCODED: "policy:limits-encoded",
   POLICY_SUBSCRIPTIONS: "policy:subscriptions",
   POLICY_VERSION: "policy:version",
   POLICY_PUBLISHER: "policy:publisher",
