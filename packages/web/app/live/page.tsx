@@ -19,7 +19,7 @@ const SMART_ACCOUNT =
 export default async function LivePage() {
   const subscriptions = await getSubscriptions(AGENT_ENS);
   return (
-    <main className="relative flex min-h-screen flex-col">
+    <main className="relative flex min-h-screen flex-col md:h-screen md:min-h-0 md:overflow-hidden">
       <header className="relative z-10 flex items-center justify-between px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[color:var(--color-accent-cyan)] to-[color:var(--color-accent-violet)] shadow-[0_0_18px_-4px_rgba(168,85,247,0.7)]">
@@ -35,7 +35,7 @@ export default async function LivePage() {
         <ConnectButton chainStatus="icon" accountStatus="address" showBalance={false} />
       </header>
 
-      <div className="relative z-10 grid h-[calc(100vh-72px)] grid-cols-1 gap-4 px-4 pb-4 md:grid-cols-[3fr_2fr_2fr] md:px-6 md:pb-6">
+      <div className="relative z-10 grid min-h-[640px] grid-cols-1 gap-4 px-4 pb-4 md:min-h-0 md:flex-1 md:grid-cols-[3fr_2fr_2fr] md:grid-rows-1 md:px-6 md:pb-4">
         <ChatPanel agentEns={AGENT_ENS} smartAccountAddress={SMART_ACCOUNT} />
         <EnsStatePanel
           agentEns={AGENT_ENS}

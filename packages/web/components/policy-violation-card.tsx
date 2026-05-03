@@ -34,7 +34,7 @@ export function PolicyViolationCard({
           Blocked by {authorityEns}
         </span>
       </div>
-      <p className="text-xs text-[color:var(--color-foreground)]/90">
+      <p className="wrap-anywhere text-xs text-[color:var(--color-foreground)]/90">
         {reason}
       </p>
       {(destination || amountEth !== undefined) && (

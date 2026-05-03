@@ -64,7 +64,7 @@ export function AgentWalletPanel({
     : `Fund agent (${FUND_AMOUNT_ETH} ETH)`;
 
   return (
-    <aside className="flex h-full flex-col gap-4 rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)]/70 p-5 shadow-[0_0_40px_-12px_rgba(44,228,255,0.25)] backdrop-blur-sm">
+    <aside className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)]/70 p-5 shadow-[0_0_40px_-12px_rgba(44,228,255,0.25)] backdrop-blur-sm">
       <header className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[color:var(--color-muted)]">
           <Wallet size={14} className="text-[color:var(--color-accent-cyan)]" />

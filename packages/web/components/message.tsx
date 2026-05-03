@@ -34,7 +34,7 @@ export function Message({ message }: { message: UIMessage }) {
       className={`fade-slide-in flex w-full ${isUser ? "justify-end" : "justify-start"}`}
     >
       <div
-        className={`max-w-[88%] space-y-2 rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+        className={`min-w-0 max-w-[88%] space-y-2 wrap-anywhere rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
           isUser
             ? "border border-[color:var(--color-accent-violet)]/40 bg-gradient-to-br from-[color:var(--color-accent-violet)]/25 to-[color:var(--color-accent-violet)]/10 text-[color:var(--color-foreground)]"
             : "border border-[color:var(--color-accent-cyan)]/30 bg-[color:var(--color-surface)]/80 text-[color:var(--color-foreground)] backdrop-blur-sm"

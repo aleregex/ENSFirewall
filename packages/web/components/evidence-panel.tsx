@@ -55,8 +55,8 @@ function truncateHash(hash: string): string {
 
 export function EvidencePanel() {
   return (
-    <section className="relative z-10 mx-4 mb-6 rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)]/70 p-5 shadow-[0_0_40px_-12px_rgba(44,228,255,0.20)] backdrop-blur-sm md:mx-6 md:p-6">
-      <header className="mb-5 flex flex-col gap-1">
+    <section className="relative z-10 mx-4 mb-4 rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)]/70 p-4 shadow-[0_0_40px_-12px_rgba(44,228,255,0.20)] backdrop-blur-sm md:mx-6 md:mb-6 md:p-4">
+      <header className="mb-3 flex flex-col gap-0.5 md:flex-row md:items-baseline md:justify-between md:gap-3">
         <div className="flex items-center gap-2">
           <ShieldAlert
             size={14}
@@ -66,16 +66,13 @@ export function EvidencePanel() {
             Verifiable evidence on Sepolia
           </h2>
         </div>
-        <p className="text-sm text-[color:var(--color-foreground)]/80">
-          Four real onchain transactions prove the firewall enforces policies
-          without redeploys.{" "}
-          <span className="text-[color:var(--color-muted)]">
-            Click any item to verify on Etherscan.
-          </span>
+        <p className="text-[11px] text-[color:var(--color-muted)] md:text-right">
+          Four real onchain txs prove the firewall enforces policies without
+          redeploys. Click to verify on Etherscan.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {EVIDENCE.map((item) => (
           <EvidenceCard key={item.title} item={item} />
         ))}
@@ -99,7 +96,7 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
       target="_blank"
       rel="noopener noreferrer"
       title={item.txHash ?? item.href}
-      className={`group relative flex flex-col gap-3 rounded-xl border ${baseBorder} bg-black/30 p-4 ${baseShadow} transition-all hover:-translate-y-0.5 hover:border-[color:var(--color-accent-cyan)]/60 hover:bg-black/40`}
+      className={`group relative flex flex-col gap-2 rounded-xl border ${baseBorder} bg-black/30 p-3 ${baseShadow} transition-all hover:-translate-y-0.5 hover:border-[color:var(--color-accent-cyan)]/60 hover:bg-black/40`}
     >
       {item.highlight && (
         <span className="absolute -top-2 right-3 inline-flex items-center gap-1 rounded-full border border-[color:var(--color-accent-cyan)]/60 bg-[color:var(--color-background)] px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[color:var(--color-accent-cyan)]">

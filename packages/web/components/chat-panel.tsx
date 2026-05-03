@@ -112,7 +112,7 @@ export function ChatPanel({
   const isStreaming = status === "submitted" || status === "streaming";
 
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)]/70 shadow-[0_0_40px_-12px_rgba(168,85,247,0.25)] backdrop-blur-sm">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)]/70 shadow-[0_0_40px_-12px_rgba(168,85,247,0.25)] backdrop-blur-sm">
       <header className="flex items-center justify-between border-b border-[color:var(--color-border-subtle)] px-5 py-3">
         <div className="flex flex-col">
           <h2 className="text-xs font-medium uppercase tracking-wider text-[color:var(--color-muted)]">
