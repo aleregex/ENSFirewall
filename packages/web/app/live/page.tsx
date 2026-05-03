@@ -5,6 +5,8 @@ import type { Address } from "viem";
 import { ChatPanel } from "@/components/chat-panel";
 import { AgentWalletPanel } from "@/components/agent-wallet-panel";
 import { EnsStatePanel } from "@/components/ens-state-panel";
+import { EvidencePanel } from "@/components/evidence-panel";
+import { getSubscriptions } from "@/lib/ens-firewall";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +16,8 @@ const SMART_ACCOUNT =
   (process.env.NEXT_PUBLIC_AGENT_SMART_ACCOUNT_ADDRESS as Address | undefined) ??
   ("0x6EB916196e1A081234B26a977DFacF32510fA6C7" as Address);
 
-// Note: this page renders client components inside; it stays a server component
-// itself so the env vars can be read at build/request time without leaking the
-// values into a public client bundle (they're already NEXT_PUBLIC_, so this is
-// pure tidiness).
-export default function LivePage() {
+export default async function LivePage() {
+  const subscriptions = await getSubscriptions(AGENT_ENS);
   return (
     <main className="relative flex min-h-screen flex-col">
       <header className="relative z-10 flex items-center justify-between px-4 py-4 md:px-6">
@@ -38,9 +37,15 @@ export default function LivePage() {
 
       <div className="relative z-10 grid h-[calc(100vh-72px)] grid-cols-1 gap-4 px-4 pb-4 md:grid-cols-[3fr_2fr_2fr] md:px-6 md:pb-6">
         <ChatPanel agentEns={AGENT_ENS} smartAccountAddress={SMART_ACCOUNT} />
-        <EnsStatePanel agentEns={AGENT_ENS} smartAccountAddress={SMART_ACCOUNT} />
+        <EnsStatePanel
+          agentEns={AGENT_ENS}
+          smartAccountAddress={SMART_ACCOUNT}
+          subscriptions={subscriptions}
+        />
         <AgentWalletPanel agentEns={AGENT_ENS} smartAccountAddress={SMART_ACCOUNT} />
       </div>
+
+      <EvidencePanel />
     </main>
   );
 }

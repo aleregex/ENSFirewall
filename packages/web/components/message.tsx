@@ -19,7 +19,7 @@ const TOOL_LABELS: Record<
   },
   "tool-sendTransaction": {
     running: "Building userOp + ENS policy check…",
-    success: "Transaction submitted",
+    success: "Policy Check Passed",
     blocked: "Transaction blocked by ENS policy",
     error: "Transaction failed",
   },
@@ -121,28 +121,31 @@ function ToolOutputView({
     );
   }
 
-  if (type === "tool-sendTransaction" && data.status === "submitted") {
-    const hash = String(data.userOpHash ?? "");
-    const url = typeof data.explorerUrl === "string" ? data.explorerUrl : null;
-    const short = `${hash.slice(0, 8)}…${hash.slice(-4)}`;
+  if (type === "tool-sendTransaction" && data.status === "simulated") {
+    const smartAccount =
+      typeof data.smartAccount === "string" ? data.smartAccount : null;
+    const smartAccountUrl =
+      typeof data.smartAccountUrl === "string" ? data.smartAccountUrl : null;
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <ToolCallIndicator label={labels.success} variant="success" />
-        <span className="text-xs text-[color:var(--color-muted)]">
-          userOp:{" "}
-          {url ? (
+        <p className="text-xs leading-relaxed text-[color:var(--color-muted)]">
+          All ENS-published policies allow this transaction. In production, the
+          smart account at{" "}
+          {smartAccount && smartAccountUrl ? (
             <Link
-              href={url}
+              href={smartAccountUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-[color:var(--color-accent-cyan)] underline-offset-2 hover:underline"
             >
-              {short}
+              {truncateAddress(smartAccount, 6, 4)}
             </Link>
           ) : (
-            <span className="font-mono">{short}</span>
-          )}
-        </span>
+            <span className="font-mono">the agent</span>
+          )}{" "}
+          would now sign and broadcast onchain.
+        </p>
       </div>
     );
   }

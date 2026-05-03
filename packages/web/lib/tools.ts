@@ -9,7 +9,7 @@ import {
   type BuildSafeUserOpResult,
   type PolicyCheck,
 } from "./ens-firewall";
-import { explorerTxUrl, explorerAddressUrl } from "./utils";
+import { explorerAddressUrl } from "./utils";
 
 export const TOOL_NAMES = {
   GET_BALANCE: "getBalance",
@@ -93,10 +93,11 @@ export function buildAgentTools(args: {
             userMessage,
           });
           return {
-            status: "submitted" as const,
-            userOpHash: result.userOpHash,
-            txHash: result.txHash ?? null,
-            explorerUrl: result.txHash ? explorerTxUrl(result.txHash) : null,
+            status: "simulated" as const,
+            smartAccount: smartAccountAddress,
+            smartAccountUrl: explorerAddressUrl(smartAccountAddress),
+            message:
+              "Policy validation passed. Transaction would be safe to submit (this demo does not broadcast).",
             checks: result.checks,
             destination,
             amountEth,

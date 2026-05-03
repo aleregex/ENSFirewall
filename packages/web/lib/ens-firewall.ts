@@ -59,9 +59,7 @@ export type BuildSafeUserOpArgs = {
 };
 
 export type BuildSafeUserOpResult = {
-  status: "would-submit";
-  userOpHash: Hex;
-  txHash?: Hex;
+  status: "validated";
   // Surface what the SDK checked so the UI can visualize ENS reads.
   checks: PolicyCheck[];
 };
@@ -301,12 +299,11 @@ export async function buildSafeUserOp(
     }
   }
 
-  // TODO(SDK): instead of fake hash, sign userOp with agent session key and
-  // submit to Pimlico bundler, return real userOpHash + txHash.
-  const fakeHash = `0x${"de".repeat(32)}` as Hex;
+  // TODO(SDK): once wired to Pimlico, sign userOp with agent session key and
+  // broadcast — return real userOpHash + txHash and switch status to "submitted".
+  // For now the demo only validates; it does not broadcast.
   return {
-    status: "would-submit",
-    userOpHash: fakeHash,
+    status: "validated",
     checks,
   };
 }
